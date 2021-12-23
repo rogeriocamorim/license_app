@@ -1,0 +1,5 @@
+09:13:35.485 TRACE io.github.rogeriocamorim.ValidateSerialNumber Line:22 Method:main - Enter Entering application.
+09:13:35.686 TRACE io.github.rogeriocamorim.ValidateSerialNumber Line:30 Method:getMachineID - Enter Getting MachineID.
+09:13:35.687 TRACE io.github.rogeriocamorim.ValidateSerialNumber Line:33 Method:getMachineID - Enter Machine: windows 10
+09:13:36.029 TRACE io.github.rogeriocamorim.ValidateSerialNumber Line:104 Method:sendPost - Connection OK. Response code: 401
+09:13:36.030 TRACE io.github.rogeriocamorim.ValidateSerialNumber Line:26 Method:main - Exiting application.
