@@ -2,6 +2,12 @@ package io.github.rogeriocamorim;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import oshi.SystemInfo;
+import oshi.hardware.CentralProcessor;
+import oshi.hardware.ComputerSystem;
+import oshi.hardware.HardwareAbstractionLayer;
+import oshi.software.os.OperatingSystem;
+import oshi.util.Constants;
 
 import java.io.*;
 import java.net.*;
@@ -21,45 +27,35 @@ public class ValidateSerialNumber {
 
         logger.traceEntry("Entering application.");
         ValidateSerialNumber validateSerialNumber = new ValidateSerialNumber();
-        validateSerialNumber.getMachineID();
+        String unknownHash = String.format("%08x", Constants.UNKNOWN.hashCode());
+        String computerIdentifier = getComputerIdentifier();
+        System.out.println("If any field is " + unknownHash
+                + " then I couldn't find a serial number or uuid, and running as sudo might change this.");
+
+        logger.traceEntry("ComputerIdentifier: {}", computerIdentifier);
         validateSerialNumber.sendPost();
         logger.trace("Exiting application.");
     }
 
-    private void getMachineID(){
-        logger.traceEntry("Getting MachineID.");
-        String operationSystem = System.getProperty("os.name").toLowerCase();
-        String machineId = "";
-        logger.traceEntry("Machine: {}", operationSystem);
-        if (operationSystem.contains("win")) {
-            StringBuilder output = new StringBuilder();
-            String[] cmd = {"wmic", "csproduct", "get", "UUID"};
-            machineId = getUUIDFromMachine(output, cmd);
-        } else if (operationSystem.contains("nix") || operationSystem.contains("nux") || operationSystem.indexOf("aix") > 0) {
+    public static String getComputerIdentifier() {
+        SystemInfo systemInfo = new SystemInfo();
+        OperatingSystem operatingSystem = systemInfo.getOperatingSystem();
+        HardwareAbstractionLayer hardwareAbstractionLayer = systemInfo.getHardware();
+        CentralProcessor centralProcessor = hardwareAbstractionLayer.getProcessor();
+        ComputerSystem computerSystem = hardwareAbstractionLayer.getComputerSystem();
 
-            StringBuilder output = new StringBuilder();
-            String[] cmd = {"/bin/sh", "-c", "echo <password for superuser> | sudo -S cat /sys/class/dmi/id/product_uuid"};
-            machineId = getUUIDFromMachine(output, cmd);
-        }
-        System.out.println(machineId);
-    }
+        String vendor = operatingSystem.getManufacturer();
+        String processorSerialNumber = computerSystem.getSerialNumber();
+        String uuid = computerSystem.getHardwareUUID();
+        String processorIdentifier = centralProcessor.getProcessorIdentifier().getIdentifier();
+        int processors = centralProcessor.getLogicalProcessorCount();
 
-    private String getUUIDFromMachine(StringBuilder output, String[] cmd) {
-        Process process;
-        String machineId;
-        try {
-            process = Runtime.getRuntime().exec(cmd);
-            process.waitFor();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line = "";
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        machineId = output.toString();
-        return machineId;
+        String delimiter = "-";
+
+        return String.format("%08x", vendor.hashCode()) + delimiter
+                + String.format("%08x", processorSerialNumber.hashCode()) + delimiter
+                + String.format("%08x", uuid.hashCode()) + delimiter
+                + String.format("%08x", processorIdentifier.hashCode()) + delimiter + processors;
     }
 
     private void sendPost() {
